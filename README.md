@@ -1,5 +1,7 @@
 # BlobDir specification
 
+[![DOI](https://zenodo.org/badge/173922267.svg)](https://zenodo.org/badge/latestdoi/173922267)
+
 <!-- TOC depthFrom:2 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
 
 - [1. Overview](#1-overview)
