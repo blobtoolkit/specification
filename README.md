@@ -10,12 +10,12 @@
 	- [2.4 Required files](#24-required-files)
 - [3. Schema](#3-schema)
 	- [3.1 meta](#31-meta)
-		- [3.2 fields](#32-fields)
-			- [3.2.1 Identifier](#321-identifier)
-			- [3.2.2 Variable](#322-variable)
-			- [3.2.3 Category](#323-category)
-			- [3.2.4 Array](#324-array)
-			- [3.2.4 MultiArray](#324-multiarray)
+	- [3.2 fields](#32-fields)
+		- [3.2.1 Identifier](#321-identifier)
+		- [3.2.2 Variable](#322-variable)
+		- [3.2.3 Category](#323-category)
+		- [3.2.4 Array](#324-array)
+		- [3.2.4 MultiArray](#324-multiarray)
 
 <!-- /TOC -->
 
@@ -83,26 +83,26 @@ A `meta.json` file containing metadata describing the `BlobDir` and its constitu
  - reads (`schema/subschemas/reads.schema.json`)
  - taxon (`schema/subschemas/taxon.schema.json`)
 
-#### 3.2 fields
+### 3.2 fields
 
 Fields are represented by `JSON` format files containing one entry per record in the `BlobDir`. Each field must conform to two additional schemas, one representing the metadata and one constraining the accepted values for the given datatype. Valid datatypes are `identifier`, `variable`, `category`, `array`, and `multiarray`. Field schemas are of the form `schema/subschemas/<datatype>.meta.schema.json` and `schema/subschemas/<datatype>.data.schema.json`. During validation, all field schemas are manipulated to ensure the number of entries matches the number of records in the `BlobDir` metadata.
 
-##### 3.2.1 Identifier
+#### 3.2.1 Identifier
 
 Each `BlobDir` must contain one `identifier` field containing an array with one entry per record in the `BlobDir`. Each identifier must be a unique string.
 
-##### 3.2.2 Variable
+#### 3.2.2 Variable
 
 Variable fields contain one value (integer or float) per record. During validation, all `variable` schemas are manipulated to ensure the maximum and minimum values match the range defined in the `BlobDir` metadata.
 
-##### 3.2.3 Category
+#### 3.2.3 Category
 
 Category fields provide a compact means of storing repetitive strings. Each record is represented by an index to an entry in an array of keys. All indexes must have a corresponding entry in the array of keys and all keys must be unique.
 
-##### 3.2.4 Array
+#### 3.2.4 Array
 
 Array fields contain two or more values (which may be a mix of `variable` and `category`) per record. A `headers` array specifies the field names.
 
-##### 3.2.4 MultiArray
+#### 3.2.4 MultiArray
 
 MultiArray fields contain two or more `array`s per record. These may be used, for example, to list a set of BLAST hits with associated scores and positions.
