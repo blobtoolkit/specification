@@ -1,18 +1,33 @@
 #!/usr/bin/env python3
 
-"""Validator for BlobToolKit JSON schema."""
+"""
+Validator for BlobToolKit JSON schema.
+
+Usage:
+    validate.py [--basic] [<BlobDir>]
+
+Arguments:
+    BlobDir    BlobDir directory or meta.json file inside a BlobDir.
+
+Options:
+    --basic    Only require basic metadata.
+"""
 
 import copy
 import re
 import os.path
 import sys
+
 import ujson
 import fastjsonschema
 
+from docopt import docopt
 
-def load_json_file(file):
+
+def load_json_file(file, schema=False):
     """Load a JSON file."""
     result = []
+    error_offset = 7 if schema else 0
     try:
         with open(file, "r") as fh:
             data = ujson.load(fh)
@@ -24,9 +39,9 @@ def load_json_file(file):
                             value['$ref'] = "file://%s" % ref_file
             return data
     except IOError as err:
-        show_error(err.strerror, 1)
+        show_error(err.strerror, 1 + error_offset)
     except ValueError as err:
-        show_error(err, 2)
+        show_error(err, 2 + error_offset)
 
 
 def url_scheme(url, path):
@@ -46,7 +61,9 @@ def show_error(error, step=0):
         'while testing processed metadata against schema',
         'while generating data schema',
         'while testing data against generated schema',
-        'while checking standard fields'
+        'while checking standard fields',
+        'while trying to read schema file',
+        'while trying to parse JSON schema',
     ]
     if error:
         stage = stages[step]
@@ -122,7 +139,7 @@ def check_expected_field_properties(field):
             assert field['type'] == 'category', "expected %s.type to be 'category'" % field_id
 
 
-def generate_data_schema(field, data_schemas, data):
+def generate_data_schema(field, meta, data_schemas, data):
     """Modify default schema to match field properties."""
     data_schema = copy.deepcopy(data_schemas[field['type']])
     schema_values = data_schema['properties']['values']
@@ -162,53 +179,64 @@ def generate_data_schema(field, data_schemas, data):
     return data_schema
 
 
-my_path = os.path.abspath(os.path.dirname(__file__))
-schema = os.path.join(my_path, "schema/meta.schema.json")
-try:
-    file = sys.argv[1]
-except IndexError:
-    print("Validating example file.")
-    file = os.path.join(my_path, "example/FXWY01/meta.json")
+def main():
+    """Entry point for validator."""
+    args = docopt(__doc__)
+    my_path = os.path.abspath(os.path.dirname(__file__))
+    schema_level = 'basic' if args['--basic'] else 'meta'
+    schema = os.path.join(my_path, "schema/%s.schema.json" % schema_level)
+    file = args['<BlobDir>']
+    if file:
+        if os.path.isdir(file):
+            file = os.path.join(file, 'meta.json')
+        if not os.path.isfile(file):
+            show_error("%s not found" % file, 1)
+    else:
+        print("Validating example file.")
+        file = os.path.join(my_path, "example/FXWY01/meta.json")
 
-validate = fastjsonschema.compile(load_json_file(schema))
+    validate = fastjsonschema.compile(load_json_file(schema, True))
 
-errors = []
+    errors = []
 
-meta = load_json_file(file)
+    meta = load_json_file(file)
 
-try:
-    validate(meta)
-except fastjsonschema.exceptions.JsonSchemaException as err:
-    show_error(err, 3)
-
-flattened_fields = flatten_fields(meta['fields'])
-try:
-    meta['fields'] = flattened_fields
-    validate(meta)
-except fastjsonschema.exceptions.JsonSchemaException as err:
-    show_error(err, 4)
-
-validators = {}
-data_schemas = {}
-for type in ['array', 'category', 'identifier', 'multiarray', 'variable']:
-    type_schema = os.path.join(my_path, "schema/subschemas/%s.meta.schema.json" % type)
-    validators[type] = fastjsonschema.compile(load_json_file(type_schema))
-    data_schemas[type] = load_json_file(os.path.join(my_path, "schema/subschemas/%s.data.schema.json" % type))
-
-for field in meta['fields']:
     try:
-        validators[field['type']](field)
+        validate(meta)
+    except fastjsonschema.exceptions.JsonSchemaException as err:
+        show_error(err, 3)
+
+    flattened_fields = flatten_fields(meta['fields'])
+    try:
+        meta['fields'] = flattened_fields
+        validate(meta)
     except fastjsonschema.exceptions.JsonSchemaException as err:
         show_error(err, 4)
-    data_file = file.replace('meta.json', "%s.json" % field['id'])
-    data = load_json_file(data_file)
-    data_schema = generate_data_schema(field, data_schemas, data)
-    data_validator = fastjsonschema.compile(data_schema)
-    try:
-        data_validator(data)
-    except fastjsonschema.exceptions.JsonSchemaException as err:
-        print(field['id'])
-        show_error(err, 6)
+
+    validators = {}
+    data_schemas = {}
+    for type in ['array', 'category', 'identifier', 'multiarray', 'variable']:
+        type_schema = os.path.join(my_path, "schema/subschemas/%s.meta.schema.json" % type)
+        validators[type] = fastjsonschema.compile(load_json_file(type_schema, True))
+        data_schemas[type] = load_json_file(os.path.join(my_path, "schema/subschemas/%s.data.schema.json" % type), True)
+
+    for field in meta['fields']:
+        try:
+            validators[field['type']](field)
+        except fastjsonschema.exceptions.JsonSchemaException as err:
+            show_error(err, 4)
+        data_file = file.replace('meta.json', "%s.json" % field['id'])
+        data = load_json_file(data_file)
+        data_schema = generate_data_schema(field, meta, data_schemas, data)
+        data_validator = fastjsonschema.compile(data_schema)
+        try:
+            data_validator(data)
+        except fastjsonschema.exceptions.JsonSchemaException as err:
+            print(field['id'])
+            show_error(err, 6)
+
+    print("VALID")
 
 
-print("VALID")
+if __name__ == '__main__':
+    main()
