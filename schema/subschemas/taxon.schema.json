@@ -7,7 +7,7 @@
   "properties": {
     "taxid": {
       "description": "NCBI taxonomy ID",
-      "type": "integer"
+      "type": ["integer", "string"]
     },
     "name": {
       "description": "Primary name for the taxon",
