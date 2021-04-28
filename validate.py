@@ -220,7 +220,7 @@ def generate_data_schema(field, meta, data_schemas, data):
                     {} for x in field["headers"]
                 ]
                 category = {
-                    "type": "integer",
+                    "type": ["integer", "null"],
                     "minimum": 0,
                     "maximum": len(data["keys"]) - 1,
                 }
@@ -236,7 +236,7 @@ def generate_data_schema(field, meta, data_schemas, data):
             try:
                 schema_values["items"]["items"] = [{} for x in field["headers"]]
                 category = {
-                    "type": "integer",
+                    "type": ["integer", "null"],
                     "minimum": 0,
                     "maximum": len(data["keys"]) - 1,
                 }
