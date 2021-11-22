@@ -14,5 +14,5 @@
       "type": "string"
     }
   },
-  "required": [ "taxid", "name" ]
+  "required": [ "name" ]
 }
