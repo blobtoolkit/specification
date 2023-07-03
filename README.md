@@ -1,3 +1,8 @@
+# ARCHIVED
+
+This repository has been archived as all code is now maintained as part of [blobtoolkit/blobtoolkit](https://github.com/blobtoolkit/blobtoolkit) under `src/blobtools`
+
+
 # BlobDir specification
 
 [![DOI](https://zenodo.org/badge/173922267.svg)](https://zenodo.org/badge/latestdoi/173922267)
